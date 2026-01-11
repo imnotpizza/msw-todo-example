@@ -1,73 +1,85 @@
-# React + TypeScript + Vite
+# MSW Todo Example
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+블로그 글 검증 및 시연용 MSW(Mock Service Worker)를 활용한 Todo 프로젝트
 
-Currently, two official plugins are available:
+## 기술 스택
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Frontend**: React 19 + TypeScript
+- **Build Tool**: Vite 7
+- **Styling**: Tailwind CSS 4
+- **API Mocking**: MSW 2.x
+- **Mock DB**: @msw/data
+- **Validation**: Zod 4
 
-## React Compiler
+## 프로젝트 구조
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+src/
+├── api/              # API 호출 함수들
+│   └── index.ts      # createTodo, fetchTodoList, updateTodo, deleteTodo
+├── interfaces/       # TypeScript 인터페이스
+│   └── index.ts      # TodoItem, TNewTodo
+├── mocks/            # MSW 설정
+│   ├── browser.ts    # 브라우저 환경용 MSW worker
+│   ├── server.ts     # 서버 환경용 MSW server (SSR/테스트)
+│   ├── startMsw.ts   # MSW 실행 함수
+│   ├── handlers.ts   # API 핸들러 정의
+│   └── mockTodoDb.ts # @msw/data를 이용한 mock DB
+├── App.tsx           # 메인 애플리케이션
+└── main.tsx          # 진입점 (MSW 초기화)
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 실행 방법
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### 1. 의존성 설치
+```bash
+npm install
 ```
+
+### 2. 일반 개발 모드 (MSW 비활성화)
+```bash
+npm run dev
+```
+
+### 3. MSW 활성화 모드
+```bash
+npm run dev:mock
+```
+
+`VITE_MSW_ENABLED=true` 환경 변수가 주입되어 MSW가 활성화됩니다.
+
+## 구조 간략 설명
+
+### `src/mocks/startMsw.ts`
+MSW를 실행하기 위한 코드입니다. `VITE_MSW_ENABLED` 환경변수가 `true`일 때만 실행되며, 환경에 따라 browser 또는 server worker를 동적으로 import하여 실행합니다.
+
+```typescript
+export async function startMsw() {
+  if (import.meta.env.NODE_ENV === "production") return;
+  if (typeof window !== "undefined" && import.meta.env.NODE_ENV !== "test") {
+    // 브라우저 환경
+    const worker = await import("./browser").then((res) => res.default);
+    await worker.start({
+      onUnhandledRequest: "bypass",
+    });
+  } else {
+    // 서버 환경 (SSR, 테스트)
+    const server = await import("./server").then((res) => res.default);
+    server.listen({});
+  }
+}
+```
+
+## API 엔드포인트
+
+- `GET /api/todos` - 할일 목록 조회 (50개 자동 생성)
+- `POST /api/todos` - 할일 추가
+- `PUT /api/todos/:id` - 할일 수정
+- `DELETE /api/todos/:id` - 할일 삭제
+
+## MSW 작동 방식
+
+1. 브라우저에서 fetch/axios 등으로 API 요청 발생
+2. Service Worker가 네트워크 레벨에서 요청을 가로챔
+3. MSW에 등록된 handler 중 일치하는 것을 탐색
+4. 일치하는 handler가 있으면 mock response 반환, 없으면 실제 서버로 전달
