@@ -1,55 +1,13 @@
 import { http, HttpResponse } from "msw";
 import type { TNewTodo, TodoItem } from "../interfaces";
-import { todoDB } from "./mockTodoDb";
+import { initDB, todoDB } from "./mockTodoDb";
 
 const baseUrl = "https://myapi/v2";
 
-/**
- * 50개의 Mock Todo 데이터를 생성하는 유틸 함수
- */
-function generateMockTodos(count: number = 50): TodoItem[] {
-  const todoTemplates = [
-    "MSW 설정하기",
-    "Todo API 만들기",
-    "Mock 데이터 작성하기",
-    "UI 컴포넌트 개발하기",
-    "배포 준비하기",
-    "테스트 코드 작성하기",
-    "문서 작성하기",
-    "코드 리뷰하기",
-    "버그 수정하기",
-    "리팩토링하기",
-    "성능 최적화하기",
-    "디자인 시스템 구축하기",
-    "API 명세서 작성하기",
-    "데이터베이스 설계하기",
-    "CI/CD 파이프라인 구축하기",
-  ];
-
-  const todos: TodoItem[] = [];
-
-  for (let i = 1; i <= count; i++) {
-    const templateIndex = (i - 1) % todoTemplates.length;
-    const todoNumber = Math.floor((i - 1) / todoTemplates.length) + 1;
-    const todoName =
-      todoNumber > 1
-        ? `${todoTemplates[templateIndex]} ${todoNumber}`
-        : todoTemplates[templateIndex];
-
-    todos.push({
-      id: i,
-      name: todoName,
-      checked: i % 3 === 0, // 3개 중 1개는 완료 상태
-    });
-  }
-
-  return todos;
-}
-
 export const handlers = [
   // GET /api/todos - 할일 목록 조회
-  http.get(baseUrl + "/api/todos", () => {
-    const mockData = generateMockTodos(50);
+  http.get(baseUrl + "/api/todos", async () => {
+    const mockData = await initDB();
 
     return HttpResponse.json(mockData, {
       status: 200,
