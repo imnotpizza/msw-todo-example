@@ -31,7 +31,6 @@ function App() {
     try {
       const newTodo = await createTodo({
         name: newTodoName,
-        checked: "false",
       });
       setTodos([...todos, newTodo]);
       setNewTodoName("");
@@ -44,7 +43,7 @@ function App() {
     try {
       const updatedTodo = await updateTodo({
         ...todo,
-        checked: todo.checked === "true" ? "false" : "true",
+        checked: !todo.checked,
       });
       setTodos(todos.map((t) => (t.id === updatedTodo.id ? updatedTodo : t)));
     } catch (error) {
@@ -102,13 +101,13 @@ function App() {
                 >
                   <input
                     type="checkbox"
-                    checked={todo.checked === "true"}
+                    checked={todo.checked}
                     onChange={() => handleToggleTodo(todo)}
                     className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                   />
                   <span
                     className={`flex-1 ${
-                      todo.checked === "true"
+                      todo.checked
                         ? "line-through text-gray-400"
                         : "text-gray-800"
                     }`}
