@@ -75,7 +75,7 @@ export const handlers = [
   }),
 
   // DELETE /api/todos/:id - 할일 삭제
-  http.delete(baseUrl + "/api/todos/:id", ({ params }) => {
+  http.delete(baseUrl + "/api/todos/:id", async ({ params }) => {
     const { id } = params;
     // id가 없으면 400처리
     if (!id) {
