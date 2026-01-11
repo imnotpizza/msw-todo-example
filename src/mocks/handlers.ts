@@ -10,27 +10,27 @@ export const handlers = [
       {
         id: 1,
         name: "MSW 설정하기",
-        checked: "Y",
+        checked: true,
       },
       {
         id: 2,
         name: "Todo API 만들기",
-        checked: "Y",
+        checked: true,
       },
       {
         id: 3,
         name: "Mock 데이터 작성하기",
-        checked: "N",
+        checked: false,
       },
       {
         id: 4,
         name: "UI 컴포넌트 개발하기",
-        checked: "N",
+        checked: false,
       },
       {
         id: 5,
         name: "배포 준비하기",
-        checked: "N",
+        checked: false,
       },
     ];
 
