@@ -59,7 +59,42 @@ export const handlers = [
   }),
 
   // PUT /api/todos/:id - 할일 수정
-  http.put(baseUrl + "/api/todos/:id", async ({ request, params }) => {}),
+  http.put(baseUrl + "/api/todos/:id", async ({ request, params }) => {
+    const { id } = params;
+    const updateData = (await request.json()) as TodoItem;
+
+    // id가 없으면 400 에러
+    if (!id) {
+      return HttpResponse.json({ error: "id가 없습니다." }, { status: 400 });
+    }
+
+    // 수정할 데이터가 없으면 400 에러
+    if (!updateData || Object.keys(updateData).length === 0) {
+      return HttpResponse.json(
+        { error: "수정할 데이터가 없습니다." },
+        { status: 400 }
+      );
+    }
+
+    // name이 빈 문자열인 경우 400 에러
+    if (updateData.name !== undefined && updateData.name.trim() === "") {
+      return HttpResponse.json(
+        { error: "name은 빈 문자열일 수 없습니다." },
+        { status: 400 }
+      );
+    }
+
+    // 수정된 todo 반환
+    const updatedTodo: TodoItem = {
+      id: Number(id),
+      name: updateData.name || "Updated Todo",
+      checked: updateData.checked,
+    };
+
+    return HttpResponse.json(updatedTodo, {
+      status: 200,
+    });
+  }),
 
   // DELETE /api/todos/:id - 할일 삭제
   http.delete(baseUrl + "/api/todos/:id", ({ params }) => {}),

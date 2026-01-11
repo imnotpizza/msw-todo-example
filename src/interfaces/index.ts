@@ -4,7 +4,7 @@
 export interface TodoItem {
   id: number;
   name: string;
-  checked: string;
+  checked: boolean;
 }
 
 export type TNewTodo = Omit<TodoItem, 'id' | 'checked'>;
