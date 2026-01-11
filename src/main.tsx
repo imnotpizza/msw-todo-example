@@ -5,8 +5,8 @@ import App from "./App.tsx";
 import { startMsw } from "./mocks/startMsw.ts";
 
 async function initMsw() {
-  if (import.meta.env.NEXT_PUBLIC_MSW_ENABLED === "true") {
-    startMsw();
+  if (import.meta.env.VITE_MSW_ENABLED === "true") {
+    await startMsw();
   }
 }
 
