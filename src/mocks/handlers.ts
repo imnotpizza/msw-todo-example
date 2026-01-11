@@ -1,5 +1,6 @@
 import { http, HttpResponse } from "msw";
 import type { TNewTodo, TodoItem } from "../interfaces";
+import { todoDB } from "./mockTodoDb";
 
 const baseUrl = "https://myapi/v2";
 
@@ -63,13 +64,12 @@ export const handlers = [
     if (!newTodo || !newTodo.name || newTodo.name.trim() === "") {
       return HttpResponse.json({ error: "name이 없습니다." }, { status: 400 });
     }
-
-    // 새로운 todo 생성
-    const createdTodo: TodoItem = {
+    // create 수행
+    const createdTodo = await todoDB.create({
       id: Date.now(),
       name: newTodo.name,
       checked: false,
-    };
+    });
 
     return HttpResponse.json(createdTodo, {
       status: 201,
@@ -102,12 +102,14 @@ export const handlers = [
       );
     }
 
-    // 수정된 todo 반환
-    const updatedTodo: TodoItem = {
-      id: Number(id),
-      name: updateData.name || "Updated Todo",
-      checked: updateData.checked,
-    };
+    const targetId = Number(id);
+
+    // DB update 수행
+    const updatedTodo = await todoDB.update((q) => q.where({ id: targetId }), {
+      data(todo) {
+        (todo.checked = updateData.checked), (todo.name = updateData.name);
+      },
+    });
 
     return HttpResponse.json(updatedTodo, {
       status: 200,
@@ -121,6 +123,9 @@ export const handlers = [
     if (!id) {
       return HttpResponse.json({ error: "id가 없습니다." }, { status: 400 });
     }
+    const targetId = Number(id);
+
+    await todoDB.delete((q) => q.where({ id: targetId }));
 
     // 삭제 성공 응답
     return HttpResponse.json(
