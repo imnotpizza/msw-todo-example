@@ -1,5 +1,5 @@
 import { http, HttpResponse } from "msw";
-import type { TodoItem } from "../interfaces";
+import type { TNewTodo, TodoItem } from "../interfaces";
 
 const baseUrl = "https://todoserver/v1";
 
@@ -40,7 +40,23 @@ export const handlers = [
   }),
 
   // POST /api/todos - 할일 추가
-  http.post<any, TodoItem>(baseUrl + "/api/todos", async ({ request }) => {}),
+  http.post(baseUrl + "/api/todos", async ({ request }) => {
+    const newTodo = (await request.json()) as TNewTodo;
+
+    // newTodo 형식 검증: name이 없거나 빈 문자열이면 400 에러
+    if (!newTodo || !newTodo.name || newTodo.name.trim() === "") {
+      return HttpResponse.json({ error: "name이 없습니다." }, { status: 400 });
+    }
+
+    return HttpResponse.json(
+      {
+        message: "ok",
+      },
+      {
+        status: 201,
+      }
+    );
+  }),
 
   // PUT /api/todos/:id - 할일 수정
   http.put(baseUrl + "/api/todos/:id", async ({ request, params }) => {}),
