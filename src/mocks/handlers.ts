@@ -97,5 +97,17 @@ export const handlers = [
   }),
 
   // DELETE /api/todos/:id - 할일 삭제
-  http.delete(baseUrl + "/api/todos/:id", ({ params }) => {}),
+  http.delete(baseUrl + "/api/todos/:id", ({ params }) => {
+    const { id } = params;
+    // id가 없으면 400처리
+    if (!id) {
+      return HttpResponse.json({ error: "id가 없습니다." }, { status: 400 });
+    }
+
+    // 삭제 성공 응답
+    return HttpResponse.json(
+      { message: "삭제되었습니다.", id: Number(id) },
+      { status: 200 }
+    );
+  }),
 ];
