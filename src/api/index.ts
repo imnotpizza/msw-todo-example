@@ -24,8 +24,13 @@ export async function createTodo(todo: TNewTodo): Promise<TodoItem> {
 /**
  * 할일 목록
  */
-export async function fetchTodoList(): Promise<TodoItem[]> {
-  const response = await fetch(baseUrl + "/api/todos", {
+export async function fetchTodoList(search?: string): Promise<TodoItem[]> {
+  const url = new URL(baseUrl + "/api/todos");
+  if (search) {
+    url.searchParams.append("search", search);
+  }
+
+  const response = await fetch(url.toString(), {
     method: "GET",
   });
   if (!response.ok) {

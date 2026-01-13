@@ -4,11 +4,27 @@ import { initDB, todoDB } from "./mockTodoDb";
 
 const baseUrl = "https://myapi/v2";
 
+let initialized = false;
+
 export const handlers = [
   // GET /api/todos - 할일 목록 조회
-  http.get(baseUrl + "/api/todos", async () => {
-    const mockData = await initDB();
+  http.get(baseUrl + "/api/todos", async ({ request }) => {
+    const url = new URL(request.url);
+    const search = url.searchParams.get("search");
 
+    let mockData: any[] = [];
+    if (!initialized) {
+      mockData = await initDB();
+      initialized = true;
+    }else{
+      mockData = await todoDB.findMany();
+    }
+    // 검색어가 있으면 필터링
+    if (search && search.trim() !== "") {
+      mockData = await todoDB.findMany((q) =>
+        q.where({ name: (name) => name.startsWith(search) })
+      );
+    }
     return HttpResponse.json(mockData, {
       status: 200,
     });
