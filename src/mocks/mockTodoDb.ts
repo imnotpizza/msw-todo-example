@@ -28,7 +28,7 @@ export const todoDB = new Collection({
  * DB초기화: list 데이터 50개 초기화
  */
 export const initDB = () => {
-  return todoDB.createMany(50, (index) => ({
+  return todoDB.createMany(45, (index) => ({
     id: index + 1,
     name: `${todoTemplates[index % 10]}-${index + 1}`,
     checked: false,

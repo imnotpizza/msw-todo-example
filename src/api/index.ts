@@ -21,13 +21,35 @@ export async function createTodo(todo: TNewTodo): Promise<TodoItem> {
   return response.json();
 }
 
+export interface FetchTodoListParams {
+  search?: string;
+  page?: number;
+  perPage?: number;
+}
+
+export interface TodoListResponse {
+  data: TodoItem[];
+  total: number;
+  page: number;
+  perPage: number;
+}
+
 /**
  * 할일 목록
  */
-export async function fetchTodoList(search?: string): Promise<TodoItem[]> {
+export async function fetchTodoList(
+  params?: FetchTodoListParams
+): Promise<TodoListResponse> {
   const url = new URL(baseUrl + "/api/todos");
-  if (search) {
-    url.searchParams.append("search", search);
+
+  if (params?.search) {
+    url.searchParams.append("search", params.search);
+  }
+  if (params?.page !== undefined) {
+    url.searchParams.append("page", params.page.toString());
+  }
+  if (params?.perPage !== undefined) {
+    url.searchParams.append("perPage", params.perPage.toString());
   }
 
   const response = await fetch(url.toString(), {

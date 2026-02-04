@@ -11,23 +11,56 @@ export const handlers = [
   http.get(baseUrl + "/api/todos", async ({ request }) => {
     const url = new URL(request.url);
     const search = url.searchParams.get("search");
+    const page = parseInt(url.searchParams.get("page") || "1", 10);
+    const perPage = parseInt(url.searchParams.get("perPage") || "10", 10);
+    // skip, take 계산
+    const skip = (page - 1) * perPage;
+    const take = perPage;
+
+    // DB 초기화
+    if (!initialized) {
+      await initDB();
+      initialized = true;
+    }
+
 
     let mockData: any[] = [];
-    if (!initialized) {
-      mockData = await initDB();
-      initialized = true;
-    }else{
-      mockData = await todoDB.findMany();
-    }
+    let total = 0;
+
     // 검색어가 있으면 필터링
     if (search && search.trim() !== "") {
-      mockData = await todoDB.findMany((q) =>
-        q.where({ name: (name) => name.startsWith(search) })
+      const allSearchResults = todoDB.findMany((q) =>
+        q.where({ name: (name) => name.includes(search) })
       );
+      total = allSearchResults.length;
+      mockData = todoDB.findMany(
+        (q) => q.where({ name: (name) => name.includes(search) }),
+        {
+          skip,
+          take,
+        }
+      );
+    } else {
+      // 전체 목록
+      const allData = todoDB.findMany(undefined);
+      total = allData.length;
+      mockData = todoDB.findMany(undefined, {
+        skip,
+        take,
+      });
     }
-    return HttpResponse.json(mockData, {
-      status: 200,
-    });
+
+    return HttpResponse.json(
+      {
+        data: mockData,
+        total,
+        page,
+        perPage,
+      },
+      {
+        status: 200,
+      }
+    );
   }),
 
   // POST /api/todos - 할일 추가

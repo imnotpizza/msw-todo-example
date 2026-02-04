@@ -8,16 +8,24 @@ function App() {
   const [newTodoName, setNewTodoName] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [perPage] = useState(10);
+  const [total, setTotal] = useState(0);
 
   useEffect(() => {
     loadTodos();
-  }, []);
+  }, [page]);
 
-  const loadTodos = async (search?: string) => {
+  const loadTodos = async () => {
     try {
       setLoading(true);
-      const data = await fetchTodoList(search);
-      setTodos(data);
+      const response = await fetchTodoList({
+        search: searchQuery || undefined,
+        page,
+        perPage,
+      });
+      setTodos(response.data);
+      setTotal(response.total);
     } catch (error) {
       console.error("Failed to load todos:", error);
     } finally {
@@ -27,12 +35,26 @@ function App() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    loadTodos(searchQuery);
+    setPage(1); // 검색 시 첫 페이지로
+    loadTodos();
   };
 
   const handleClearSearch = () => {
     setSearchQuery("");
-    loadTodos();
+    setPage(1);
+  };
+
+  const handlePreviousPage = () => {
+    if (page > 1) {
+      setPage(page - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    const totalPages = Math.ceil(total / perPage);
+    if (page < totalPages) {
+      setPage(page + 1);
+    }
   };
 
   const handleCreateTodo = async (e: React.FormEvent) => {
@@ -126,42 +148,72 @@ function App() {
         {loading ? (
           <div className="text-center py-8 text-gray-600">Loading...</div>
         ) : (
-          <div className="space-y-2">
-            {todos.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                No todos yet. Add one above!
-              </div>
-            ) : (
-              todos.map((todo) => (
-                <div
-                  key={todo.id}
-                  className="bg-white rounded-lg shadow-sm p-4 flex items-center gap-3 hover:shadow-md transition-shadow"
-                >
-                  <input
-                    type="checkbox"
-                    checked={todo.checked}
-                    onChange={() => handleToggleTodo(todo)}
-                    className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                  />
-                  <span
-                    className={`flex-1 ${
-                      todo.checked
-                        ? "line-through text-gray-400"
-                        : "text-gray-800"
-                    }`}
+          <>
+            <div className="space-y-2">
+              {todos.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  No todos yet. Add one above!
+                </div>
+              ) : (
+                todos.map((todo) => (
+                  <div
+                    key={todo.id}
+                    className="bg-white rounded-lg shadow-sm p-4 flex items-center gap-3 hover:shadow-md transition-shadow"
                   >
-                    {todo.name}
-                  </span>
+                    <input
+                      type="checkbox"
+                      checked={todo.checked}
+                      onChange={() => handleToggleTodo(todo)}
+                      className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                    />
+                    <span
+                      className={`flex-1 ${
+                        todo.checked
+                          ? "line-through text-gray-400"
+                          : "text-gray-800"
+                      }`}
+                    >
+                      {todo.name}
+                    </span>
+                    <button
+                      onClick={() => handleDeleteTodo(todo.id)}
+                      className="px-3 py-1 text-red-600 hover:bg-red-50 rounded transition-colors"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {total > 0 && (
+              <div className="mt-6 flex items-center justify-between bg-white rounded-lg shadow-sm p-4">
+                <div className="text-sm text-gray-600">
+                  Showing {(page - 1) * perPage + 1} to{" "}
+                  {Math.min(page * perPage, total)} of {total} todos
+                </div>
+                <div className="flex gap-2">
                   <button
-                    onClick={() => handleDeleteTodo(todo.id)}
-                    className="px-3 py-1 text-red-600 hover:bg-red-50 rounded transition-colors"
+                    onClick={handlePreviousPage}
+                    disabled={page === 1}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium disabled:bg-gray-300 disabled:cursor-not-allowed"
                   >
-                    Delete
+                    Previous
+                  </button>
+                  <div className="px-4 py-2 bg-gray-100 rounded-lg font-medium text-gray-700">
+                    Page {page} of {Math.ceil(total / perPage)}
+                  </div>
+                  <button
+                    onClick={handleNextPage}
+                    disabled={page >= Math.ceil(total / perPage)}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium disabled:bg-gray-300 disabled:cursor-not-allowed"
+                  >
+                    Next
                   </button>
                 </div>
-              ))
+              </div>
             )}
-          </div>
+          </>
         )}
       </div>
     </div>
